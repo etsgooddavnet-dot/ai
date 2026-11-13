@@ -1,26 +1,207 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GOOD DAV NET CAM PRO — PC</title>
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GOOD DAV NET CAM PRO — Multi-caméras</title>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
-:root{--cyan:#00e5ff;--violet:#7c4dff;--bg:#060b16;--panel:#101a2b;--line:#263a57;--txt:#eaf5ff}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 10% 0,#142443,var(--bg) 55%);color:var(--txt);font:15px system-ui,Segoe UI,Arial}header{padding:22px 5%;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}h1{margin:0;color:var(--cyan);font-size:clamp(20px,3vw,30px);letter-spacing:1px}header small{color:#9eb5d3}main{max-width:1200px;margin:22px auto;padding:0 16px;display:grid;grid-template-columns:300px 1fr;gap:16px}.card{background:linear-gradient(145deg,#111e32,#0b1424);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 10px 35px #0004}h2{font-size:17px;margin:0 0 14px;color:#a8dfff}label{display:block;color:#a9bfd9;margin:12px 0 6px}input,select{width:100%;padding:12px;border:1px solid #334967;border-radius:9px;background:#07101e;color:#fff}button{border:0;border-radius:9px;padding:12px 14px;margin:5px 4px 5px 0;background:linear-gradient(100deg,var(--cyan),#61a9ff);color:#03111b;font-weight:750;cursor:pointer}button.secondary{background:#263954;color:#e9f5ff}button.red{background:#ff5470;color:#24040b}button:disabled{opacity:.4;cursor:not-allowed}.idbox{word-break:break-all;background:#06101c;border:1px dashed #34506e;padding:12px;border-radius:9px;color:var(--cyan);min-height:44px}#status{color:#ffd166;line-height:1.5}video{width:100%;max-height:70vh;aspect-ratio:16/9;object-fit:contain;background:#000;border-radius:12px;border:1px solid #263a57}.actions{display:flex;flex-wrap:wrap;gap:4px}.meta{color:#9eb5d3;font-size:13px}.pill{display:inline-block;padding:5px 9px;border-radius:99px;background:#17384a;color:#7ff4ff;font-size:12px}@media(max-width:800px){main{grid-template-columns:1fr}}
-</style></head><body>
-<header><div><h1>GOOD DAV NET CAM <span style="color:#fff">PRO</span></h1><small>Réception caméra mobile · Capture & enregistrement</small></div><span class="pill">DESKTOP CONTROL</span></header>
-<main><aside class="card"><h2>01 · Connexion</h2><p class="meta">ID PC à communiquer au téléphone :</p><div class="idbox" id="myid">Initialisation…</div><button id="copy" class="secondary">Copier l'ID</button><label>État</label><p id="status">Connexion au service PeerJS…</p><hr style="border-color:#263a57"><h2>02 · Fichiers</h2><p class="meta">Les captures sont téléchargées dans le dossier choisi par votre navigateur (souvent Téléchargements).</p><p class="meta">Photo : JPG · vidéo : WebM. Le MP4 n'est pas garanti par tous les navigateurs.</p></aside>
-<section class="card"><h2>03 · Aperçu caméra</h2><video id="video" autoplay playsinline></video><p id="info" class="meta">En attente du téléphone…</p><div class="actions"><button id="photo" disabled>📸 Photo JPG</button><button id="record" disabled>⏺ Enregistrer</button><button id="stop" class="red" disabled>⏹ Arrêter</button><button id="fullscreen" class="secondary">⛶ Plein écran</button></div><canvas id="canvas" hidden></canvas></section></main>
+:root{--cyan:#00e5ff;--bg:#060b16;--line:#263a57;--txt:#eaf5ff}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 10% 0,#142443,var(--bg) 55%);color:var(--txt);font:15px system-ui,Segoe UI,Arial}
+header{padding:20px 4%;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}
+h1{margin:0;color:var(--cyan);font-size:clamp(20px,3vw,30px);letter-spacing:1px}
+header small,.meta{color:#9eb5d3}
+main{max-width:1500px;margin:22px auto;padding:0 16px}
+.card,.camera{background:linear-gradient(145deg,#111e32,#0b1424);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 10px 35px #0004}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+button{border:0;border-radius:9px;padding:10px 13px;margin:3px;background:linear-gradient(100deg,var(--cyan),#61a9ff);color:#03111b;font-weight:750;cursor:pointer}
+button.secondary{background:#263954;color:#e9f5ff}
+button.red{background:#ff5470;color:#24040b}
+button:disabled{opacity:.4;cursor:not-allowed}
+input{padding:10px;border:1px solid #334967;border-radius:9px;background:#07101e;color:#fff;width:80px}
+#grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:15px}
+.camera h2{font-size:17px;color:#a8dfff;margin:0 0 10px}
+.idbox{word-break:break-all;background:#06101c;border:1px dashed #34506e;padding:10px;border-radius:9px;color:var(--cyan);min-height:42px;font-size:13px}
+.status{color:#ffd166;min-height:22px;font-size:13px}
+video{width:100%;aspect-ratio:16/9;object-fit:contain;background:#000;border-radius:12px;border:1px solid #263a57;margin-top:10px}
+.actions{display:flex;flex-wrap:wrap;gap:3px}
+.pill{display:inline-block;padding:5px 9px;border-radius:99px;background:#17384a;color:#7ff4ff;font-size:12px}
+.note{line-height:1.55}
+@media(max-width:600px){#grid{grid-template-columns:1fr}.camera{padding:12px}}
+</style>
+</head>
+<body>
+<header>
+ <div><h1>GOOD DAV NET CAM <span style="color:#fff">PRO</span></h1><small>Réception simultanée de plusieurs caméras mobiles</small></div>
+ <span class="pill">MULTI-CAMÉRAS</span>
+</header>
+<main>
+ <section class="card note">
+  <div class="toolbar">
+   <button id="add">＋ Ajouter une caméra</button>
+   <label>Nombre de cases à créer :
+    <input id="quantity" type="number" min="1" max="32" value="4">
+   </label>
+   <button id="create" class="secondary">Créer les cases</button>
+  </div>
+  <p class="meta">Chaque case possède son propre ID PeerJS. Sur chaque téléphone, ouvrez CAM_PHONE et saisissez l'ID de la case à laquelle ce téléphone doit se connecter. Les connexions, photos et enregistrements sont indépendants.</p>
+  <p class="meta">Important : une connexion Internet est nécessaire pour le service de signalisation PeerJS. Autorisez la caméra sur le téléphone et gardez cette page ouverte sur le PC.</p>
+ </section>
+ <div id="grid" style="margin-top:16px"></div>
+</main>
 <script>
-const $=id=>document.getElementById(id),vid=$('video');let peer,call,remote,rec,chunks=[],startedAt;
-function say(s){$('status').textContent=s}
-function save(blob,name){const a=document.createElement('a'),u=URL.createObjectURL(blob);a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),5000)}
-function stamp(){return new Date().toISOString().replace(/[:.]/g,'-')}
-function ready(on){$('photo').disabled=!on;$('record').disabled=!on}
-peer=new Peer(undefined,{debug:1});
-peer.on('open',id=>{$('myid').textContent=id;say('Prêt. Ouvrez CAM_PHONE sur le mobile et entrez cet ID.')});
-peer.on('call',c=>{if(call)call.close();call=c;say('Appel du téléphone…');c.answer();c.on('stream',s=>{remote=s;vid.srcObject=s;ready(true);$('info').textContent='Flux actif · '+(s.getVideoTracks()[0]?.label||'caméra mobile');say('Téléphone connecté : vidéo reçue.')});c.on('close',disconnect);c.on('error',e=>say('Erreur appel : '+e.message))});
-peer.on('error',e=>say('Erreur réseau PeerJS : '+e.type+'. Vérifiez Internet et réessayez.'));
-function disconnect(){vid.srcObject=null;remote=null;ready(false);$('info').textContent='Flux interrompu';say('Téléphone déconnecté.')}
-$('copy').onclick=async()=>{try{await navigator.clipboard.writeText($('myid').textContent);say('ID copié dans le presse-papiers.')}catch{say('Copie impossible : sélectionnez l’ID manuellement.')}};
-$('photo').onclick=()=>{if(!remote||!vid.videoWidth)return;let c=$('canvas');c.width=vid.videoWidth;c.height=vid.videoHeight;c.getContext('2d').drawImage(vid,0,0);c.toBlob(b=>save(b,'GOOD_DAV_NET_CAM_'+stamp()+'.jpg'),'image/jpeg',.94)};
-$('record').onclick=()=>{if(!remote)return;let mime=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(t=>MediaRecorder.isTypeSupported(t));try{rec=new MediaRecorder(remote,mime?{mimeType:mime}:{});chunks=[];rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};rec.onstop=()=>{save(new Blob(chunks,{type:rec.mimeType}),'GOOD_DAV_NET_CAM_'+stamp()+'.webm');say('Enregistrement terminé : fichier téléchargé.')};rec.onerror=e=>say('Erreur enregistrement : '+e.error);rec.start(1000);$('record').disabled=true;$('stop').disabled=false;startedAt=Date.now();say('Enregistrement en cours…')}catch(e){say('MediaRecorder indisponible : '+e.message)}};
-$('stop').onclick=()=>{if(rec&&rec.state!=='inactive')rec.stop();$('record').disabled=!remote;$('stop').disabled=true};
-$('fullscreen').onclick=()=>vid.requestFullscreen?.();
-window.addEventListener('beforeunload',()=>{if(rec&&rec.state!=='inactive')rec.stop();call?.close();peer?.destroy()});
-</script></body></html>
+(() => {
+ const grid=document.getElementById('grid');
+ const slots=[];
+ let nextNumber=1;
+ const stamp=()=>new Date().toISOString().replace(/[:.]/g,'-');
+ function save(blob,name){
+   if(!blob)return;
+   const url=URL.createObjectURL(blob),a=document.createElement('a');
+   a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+   setTimeout(()=>URL.revokeObjectURL(url),10000);
+ }
+ function setStatus(slot,message){slot.status.textContent=message;}
+ function setConnected(slot,on){
+   slot.photo.disabled=!on;
+   slot.record.disabled=!on;
+   if(!on)slot.stop.disabled=true;
+ }
+ function disconnect(slot,message='Téléphone déconnecté.'){
+   if(slot.rec&&slot.rec.state!=='inactive'){try{slot.rec.stop()}catch(e){}}
+   slot.rec=null;slot.remote=null;slot.video.srcObject=null;
+   setConnected(slot,false);
+   slot.info.textContent='En attente du téléphone…';
+   setStatus(slot,message);
+ }
+ function createSlot(){
+   if(!window.Peer){alert('PeerJS ne s’est pas chargé. Vérifiez Internet puis rechargez la page.');return;}
+   const n=nextNumber++;
+   const el=document.createElement('section');
+   el.className='camera';
+   el.innerHTML=`
+    <h2>Caméra ${n}</h2>
+    <p class="meta">ID unique à saisir sur le téléphone :</p>
+    <div class="idbox">Génération de l’ID…</div>
+    <div class="actions">
+      <button class="copy secondary">Copier ID</button>
+      <button class="reconnect secondary">Nouvel ID</button>
+      <button class="remove red">Supprimer</button>
+    </div>
+    <p class="status">Connexion au service PeerJS…</p>
+    <video autoplay playsinline muted></video>
+    <p class="meta info">En attente du téléphone…</p>
+    <div class="actions">
+      <button class="photo" disabled>📸 Photo JPG</button>
+      <button class="record" disabled>⏺ Enregistrer</button>
+      <button class="stop red" disabled>⏹ Arrêter</button>
+      <button class="full secondary">⛶ Plein écran</button>
+      <button class="disconnect secondary" disabled>Déconnecter</button>
+    </div>`;
+   grid.appendChild(el);
+   const slot={
+    number:n,el,peer:null,call:null,remote:null,rec:null,chunks:[],
+    idbox:el.querySelector('.idbox'),status:el.querySelector('.status'),
+    video:el.querySelector('video'),info:el.querySelector('.info'),
+    photo:el.querySelector('.photo'),record:el.querySelector('.record'),
+    stop:el.querySelector('.stop'),disconnectButton:el.querySelector('.disconnect')
+   };
+   slots.push(slot);
+   function startPeer(){
+     if(slot.call){try{slot.call.close()}catch(e){}}
+     if(slot.peer){try{slot.peer.destroy()}catch(e){}}
+     slot.call=null;disconnect(slot,'Création d’un nouvel ID…');
+     slot.idbox.textContent='Génération de l’ID…';
+     slot.peer=new Peer(undefined,{debug:1});
+     slot.peer.on('open',id=>{
+       slot.idbox.textContent=id;
+       setStatus(slot,'Prêt : connectez le téléphone avec cet ID.');
+     });
+     slot.peer.on('call',incoming=>{
+       if(slot.call){try{slot.call.close()}catch(e){}}
+       slot.call=incoming;
+       setStatus(slot,'Appel entrant : connexion en cours…');
+       incoming.answer();
+       incoming.on('stream',stream=>{
+         slot.remote=stream;slot.video.srcObject=stream;
+         slot.video.play().catch(()=>{});
+         setConnected(slot,true);slot.disconnectButton.disabled=false;
+         slot.info.textContent='Flux actif · '+(stream.getVideoTracks()[0]?.label||'caméra mobile');
+         setStatus(slot,'Téléphone connecté.');
+       });
+       incoming.on('close',()=>{slot.call=null;disconnect(slot);slot.disconnectButton.disabled=true;});
+       incoming.on('error',err=>setStatus(slot,'Erreur de flux : '+err.message));
+     });
+     slot.peer.on('error',err=>{
+       setStatus(slot,'Erreur PeerJS : '+err.type+'. Vérifiez Internet ou générez un nouvel ID.');
+     });
+     slot.peer.on('disconnected',()=>setStatus(slot,'Service PeerJS interrompu. Reconnexion nécessaire.'));
+   }
+   el.querySelector('.copy').onclick=async()=>{
+     const id=slot.idbox.textContent;
+     if(!id||id.includes('…'))return;
+     try{await navigator.clipboard.writeText(id);setStatus(slot,'ID copié.');}
+     catch(e){setStatus(slot,'Copie impossible : sélectionnez et copiez l’ID manuellement.');}
+   };
+   el.querySelector('.reconnect').onclick=startPeer;
+   el.querySelector('.remove').onclick=()=>{
+     if(slot.rec&&slot.rec.state!=='inactive'){try{slot.rec.stop()}catch(e){}}
+     if(slot.call){try{slot.call.close()}catch(e){}}
+     if(slot.peer){try{slot.peer.destroy()}catch(e){}}
+     slot.video.srcObject=null;el.remove();
+     const i=slots.indexOf(slot);if(i>=0)slots.splice(i,1);
+   };
+   slot.photo.onclick=()=>{
+     if(!slot.remote||!slot.video.videoWidth)return;
+     const canvas=document.createElement('canvas');
+     canvas.width=slot.video.videoWidth;canvas.height=slot.video.videoHeight;
+     canvas.getContext('2d').drawImage(slot.video,0,0);
+     canvas.toBlob(blob=>save(blob,`GOOD_DAV_NET_CAM_${slot.number}_${stamp()}.jpg`),'image/jpeg',.94);
+   };
+   slot.record.onclick=()=>{
+     if(!slot.remote)return;
+     if(!window.MediaRecorder){setStatus(slot,'Enregistrement non pris en charge par ce navigateur.');return;}
+     const mime=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(t=>MediaRecorder.isTypeSupported(t));
+     try{
+       slot.chunks=[];
+       slot.rec=new MediaRecorder(slot.remote,mime?{mimeType:mime}:{});
+       slot.rec.ondataavailable=e=>{if(e.data&&e.data.size)slot.chunks.push(e.data);};
+       slot.rec.onstop=()=>{
+         save(new Blob(slot.chunks,{type:slot.rec.mimeType||'video/webm'}),`GOOD_DAV_NET_CAM_${slot.number}_${stamp()}.webm`);
+         slot.record.disabled=!slot.remote;slot.stop.disabled=true;
+         setStatus(slot,'Enregistrement terminé et téléchargé.');
+       };
+       slot.rec.onerror=e=>setStatus(slot,'Erreur enregistrement : '+(e.error?.message||'inconnue'));
+       slot.rec.start(1000);slot.record.disabled=true;slot.stop.disabled=false;
+       setStatus(slot,'Enregistrement en cours…');
+     }catch(e){setStatus(slot,'Impossible d’enregistrer : '+e.message);}
+   };
+   slot.stop.onclick=()=>{
+     if(slot.rec&&slot.rec.state!=='inactive')slot.rec.stop();
+     slot.stop.disabled=true;
+   };
+   el.querySelector('.full').onclick=()=>slot.video.requestFullscreen?.();
+   slot.disconnectButton.onclick=()=>{
+     if(slot.call){try{slot.call.close()}catch(e){}}
+     slot.call=null;disconnect(slot);slot.disconnectButton.disabled=true;
+   };
+   startPeer();
+ }
+ document.getElementById('add').onclick=createSlot;
+ document.getElementById('create').onclick=()=>{
+   const count=Math.max(1,Math.min(32,parseInt(document.getElementById('quantity').value,10)||1));
+   for(let i=0;i<count;i++)createSlot();
+ };
+ for(let i=0;i<4;i++)createSlot();
+ window.addEventListener('beforeunload',()=>{
+   slots.forEach(slot=>{
+     if(slot.rec&&slot.rec.state!=='inactive'){try{slot.rec.stop()}catch(e){}}
+     if(slot.call){try{slot.call.close()}catch(e){}}
+     if(slot.peer){try{slot.peer.destroy()}catch(e){}}
+   });
+ });
+})();
+</script>
+</body>
+</html>
